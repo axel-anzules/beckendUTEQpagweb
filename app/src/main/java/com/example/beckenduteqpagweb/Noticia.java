@@ -13,6 +13,7 @@ public class Noticia {
     private String urlimagen;
     private String fecha;
     private String urlnoticia;
+    private String colorIdentificador;
 
     private static final String BASE_URL_IMAGEN = "https://uteq.edu.ec/assets/images/news/pagina/";
     private static final String BASE_URL_NOTICIA = "https://uteq.edu.ec/es/comunicacion/noticia/";
@@ -33,6 +34,9 @@ public class Noticia {
     public String getUrlnoticia() { return urlnoticia; }
     public void setUrlnoticia(String urlnoticia) { this.urlnoticia = urlnoticia; }
 
+    public String getColorIdentificador() { return colorIdentificador; }
+    public void setColorIdentificador(String colorIdentificador) { this.colorIdentificador = colorIdentificador; }
+
     // Constructor que recibe un objeto JSON
     public Noticia(JSONObject jsonObject) {
         this.titulo = jsonObject.optString("ntTitular", "Sin título");
@@ -41,6 +45,7 @@ public class Noticia {
         // Obtener categoría si existe
         JSONObject categoriaObj = jsonObject.optJSONObject("objCategoriaNotc");
         this.categoria = (categoriaObj != null) ? categoriaObj.optString("gtTitular", "Sin categoría") : "Sin categoría";
+        this.colorIdentificador = (categoriaObj != null) ? categoriaObj.optString("gtColorIdentf", "#FFFFFF") : "#FFFFFF";
 
         // Construcción segura de URLs
         String portada = jsonObject.optString("ntUrlPortada", "");

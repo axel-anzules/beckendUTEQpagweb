@@ -1,6 +1,10 @@
 package com.example.beckenduteqpagweb;
 
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -55,6 +59,8 @@ public class Adaptador_Noticia extends ArrayAdapter<Noticia> {
             holder.txtTitulo.setText(noticia.getTitulo());
             holder.txtFecha.setText(noticia.getFecha());
             holder.txtURL.setText(noticia.getUrlnoticia());
+            holder.txtURL.setPaintFlags(holder.txtURL.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+            holder.txtURL.setTextColor(Color.BLUE);
 
             // Cargar imagen usando Glide
             Glide.with(getContext())
@@ -62,6 +68,21 @@ public class Adaptador_Noticia extends ArrayAdapter<Noticia> {
                     .placeholder(R.drawable.placeholder_image) // asegúrate de tener esta imagen
                     .diskCacheStrategy(DiskCacheStrategy.ALL)  // cache para mejorar rendimiento
                     .into(holder.imgPortada);
+
+            try {
+                holder.txtCategoria.setTextColor(Color.parseColor(noticia.getColorIdentificador()));
+            } catch (IllegalArgumentException e) {
+                holder.txtCategoria.setTextColor(Color.parseColor(String.valueOf(Color.GRAY)));
+            }
+
+            holder.txtURL.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String url = noticia.getUrlnoticia();
+                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    getContext().startActivity(browserIntent);
+                }
+            });
         }
 
         return convertView;

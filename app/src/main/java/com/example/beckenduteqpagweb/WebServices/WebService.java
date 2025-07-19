@@ -1,22 +1,11 @@
 package com.example.beckenduteqpagweb.WebServices;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
+
+import com.example.beckenduteqpagweb.WebServices.Asynchtask;
 
 import org.json.JSONException;
 
@@ -24,51 +13,30 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
-
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 public class WebService extends AsyncTask<String, Long, String> {
 
-    //Variable con los datos para pasar al web service
     private Map<String, String> datos;
-    //Url del servicio web
-    private String url= "http://192.168.1.46/codigobarras/";
-
-    //Actividad para mostrar el cuadro de progreso
+    private String url;
     private Context actividad;
-
-    //Resultado
-    private String xml=null;
-
-    //Clase a la cual se le retorna los datos dle ws
-    private Asynchtask callback=null;
-
-    public Asynchtask getCallback() {
-        return callback;
-    }
-    public void setCallback(Asynchtask callback) {
-        this.callback = callback;
-    }
+    private String xml = null;
+    private Asynchtask callback = null;
 
     ProgressDialog progDailog;
 
-    /**
-     * Crea una estancia de la clase webService para hacer consultas a ws
-     * @param urlWebService Url del servicio web
-     * @param data Datos a enviar del servicios web
-     * @param activity Actividad de donde se llama el servicio web, para mostrar el cuadro de "Cargando"
-     * @param callback CLase a la que se le retornara los datos del servicio web
-     */
-    public  WebService(String urlWebService,Map<String, String> data, Context activity, Asynchtask callback) {
-        this.url=urlWebService;
-        this.datos=data;
-        this.actividad=activity;
-        this.callback=callback;
-    }
-    public WebService() {
-        // TODO Auto-generated constructor stub
+    public WebService(String urlWebService, Map<String, String> data, Context activity, Asynchtask callback) {
+        this.url = urlWebService;
+        this.datos = data;
+        this.actividad = activity;
+        this.callback = callback;
     }
 
     @Override
@@ -81,11 +49,12 @@ public class WebService extends AsyncTask<String, Long, String> {
         progDailog.setCancelable(true);
         progDailog.show();
     }
+
     @Override
     protected String doInBackground(String... params) {
         String result = "";
         try {
-
+            // Trust all certificates
             TrustManager[] trustAllCerts = new TrustManager[]{
                     new X509TrustManager() {
                         public void checkClientTrusted(X509Certificate[] chain, String authType) {}
@@ -103,13 +72,17 @@ public class WebService extends AsyncTask<String, Long, String> {
             HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
             conn.setReadTimeout(10000);
             conn.setConnectTimeout(15000);
-            conn.setRequestMethod(params[0]);
-            if(params.length>2) conn.setRequestProperty("Authorization", params[1] + params[2]);
+            conn.setRequestMethod(params[0]); // "GET", "POST", etc.
             conn.setDoInput(true);
 
+            // Si viene el parámetro "Bearer" y el token, construye el header correctamente
+            if (params.length >= 3 && params[1].equalsIgnoreCase("Bearer")) {
+                String authHeader = "Bearer " + params[2]; // ESPACIO CORRECTO
+                conn.setRequestProperty("Authorization", authHeader);
+            }
+
             int responseCode = conn.getResponseCode();
-            InputStream inputStream = (responseCode == 200) ?
-                    conn.getInputStream() : conn.getErrorStream();
+            InputStream inputStream = (responseCode == 200) ? conn.getInputStream() : conn.getErrorStream();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
             StringBuilder sb = new StringBuilder();
@@ -126,83 +99,21 @@ public class WebService extends AsyncTask<String, Long, String> {
 
         } catch (Exception e) {
             Log.e("WebServiceSecure", "Error: " + e.getMessage(), e);
-            result = "ERROR: " + e.getMessage();
+            result = "{\"error\": true, \"message\": \"" + e.getMessage() + "\"}";
         }
 
         return result;
-
-        /*try {
-
-            HttpRequest h=new HttpRequest(this.url,params[0]);
-            for (int k=1;k< params.length;k+=2)
-            {
-                h.header(params[k],params[k+1]);
-            }
-
-            String r=  h.form(this.datos).body();
-
-            return r;
-
-        } catch (HttpRequest.HttpRequestException exception) {
-            Log.e("doInBackground", exception.getMessage());
-
-            return "Error HttpRequestException";
-        } catch (Exception e) {
-            Log.e("doInBackground", e.getMessage());
-            return "Error Exception " +  e.getMessage();
-        }*/
     }
+
     @Override
     protected void onPostExecute(String response) {
         super.onPostExecute(response);
-        this.xml=response;
+        this.xml = response;
         progDailog.dismiss();
-        //Retorno los datos
         try {
             callback.processFinish(this.xml);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
-
-    }
-    public Map<String, String> getDatos() {
-        return datos;
-    }
-
-    public void setDatos(Map<String, String> datos) {
-        this.datos = datos;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public Context getActividad() {
-        return actividad;
-    }
-
-    public void setActividad(Context actividad) {
-        this.actividad = actividad;
-    }
-
-    public String getXml() {
-        return xml;
-    }
-
-    public void setXml(String xml) {
-        this.xml = xml;
-    }
-
-    public ProgressDialog getProgDailog() {
-        return progDailog;
-    }
-
-    public void setProgDailog(ProgressDialog progDailog) {
-        this.progDailog = progDailog;
     }
 }
